@@ -114,31 +114,55 @@ if app["database_master_role"]
     end
   end
 
-  # Assuming we have one...
-  if dbm
-    template "#{app['deploy_to']}/shared/database.yml" do
-      source "database.yml.erb"
-      owner app["owner"]
-      group app["group"]
-      mode "644"
-      variables(
-        :host => (dbm.attribute?('cloud') ? dbm['cloud']['local_ipv4'] : dbm['ipaddress']),
-        :databases => app['databases'],
-        :rails_env => rails_env
-      )
-    end
-  else
-    Chef::Log.warn("No node with role #{app["database_master_role"][0]}, database.yml not rendered!")
+  unless dbm
+    Chef::Log.warn("No node with role #{app["database_master_role"][0]}!")
   end
 end
 
+if !dbm && app["database_master"]
+  dbm = Chef::Node.new
+  app["database_master"].each_pair{ |k,v| dbm[k] = v }
+end
+
+# Assuming we have one...
+if dbm
+  template "#{app['deploy_to']}/shared/database.yml" do
+    source "database.yml.erb"
+    owner app["owner"]
+    group app["group"]
+    mode "644"
+    variables(
+      :host => (dbm.attribute?('cloud') ? dbm['cloud']['local_ipv4'] : dbm['ipaddress']),
+      :databases => app['databases'],
+      :rails_env => rails_env
+    )
+  end
+else
+  Chef::Log.warn("No database master found, database.yml not rendered!")
+end
+
 if app["memcached_role"]
-  results = search(:node, "role:#{app["memcached_role"][0]} AND chef_environment:#{node.chef_environment} NOT hostname:#{node[:hostname]}")
-  if results.length == 0
+  unless Chef::Config[:solo]
+    memcached_nodes = search(:node, "role:#{app["memcached_role"][0]} AND chef_environment:#{node.chef_environment} NOT hostname:#{node[:hostname]}")
+  else
+    memcached_nodes = []
+  end
+  if memcached_nodes.length == 0
     if node.run_list.roles.include?(app["memcached_role"][0])
-      results << node
+      memcached_nodes << node
     end
   end
+end
+
+if !memcached && app["memcached_hosts"]
+  memcached_nodes = app["memcached_hosts"].collect do |server|
+    cache_node = Chef::Node.new
+    app["memcached_hosts"].each_pair{ |k,v| cache_node[k] = v }
+    cache_node
+  end
+end
+
+if memcached_nodes
   template "#{app['deploy_to']}/shared/memcached.yml" do
     source "memcached.yml.erb"
     owner app["owner"]
@@ -146,7 +170,7 @@ if app["memcached_role"]
     mode "644"
     variables(
       :memcached_envs => app['memcached'],
-      :hosts => results.sort_by { |r| r.name }
+      :hosts => memcached_nodes.sort_by { |r| r.name }
     )
   end
 end

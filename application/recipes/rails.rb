@@ -65,7 +65,6 @@ directory "#{app['deploy_to']}/shared" do
 end
 
 %w{ log pids system vendor_bundle }.each do |dir|
-
   directory "#{app['deploy_to']}/shared/#{dir}" do
     owner app['owner']
     group app['group']
@@ -158,7 +157,7 @@ if !memcached_nodes && app["memcached_hosts"]
   memcached_nodes = app["memcached_hosts"].collect do |server, port|
     cache_node = Chef::Node.new
     cache_node['ipaddress'] = server
-    cache_node['memcached']['port'] = port
+    cache_node['memcached'] = {'port' => port}
     cache_node
   end
 end

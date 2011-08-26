@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-databag("apps") do |app|
+Chef::DataBag.load("apps").each_value do |app|
   (app["server_roles"] & node.run_list.roles).each do |app_role|
     app["type"][app_role].each do |thing|
       node.run_state[:current_app] = app

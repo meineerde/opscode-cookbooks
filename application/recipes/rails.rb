@@ -119,9 +119,9 @@ if app["database_master_role"]
   end
 end
 
-if !dbm && app["database_master"]
+if !dbm && app["database_master_hosts"]
   dbm = Chef::Node.new
-  app["database_master"].each_pair{ |k,v| dbm[k] = v }
+  dbm['ipaddress'] = app["database_master_hosts"][0]
 end
 
 # Assuming we have one...
@@ -154,10 +154,11 @@ if app["memcached_role"]
   end
 end
 
-if !memcached && app["memcached_hosts"]
-  memcached_nodes = app["memcached_hosts"].collect do |server|
+if !memcached_nodes && app["memcached_hosts"]
+  memcached_nodes = app["memcached_hosts"].collect do |server, port|
     cache_node = Chef::Node.new
-    app["memcached_hosts"].each_pair{ |k,v| cache_node[k] = v }
+    cache_node['ipaddress'] = server
+    cache_node['memcached']['port'] = port
     cache_node
   end
 end
@@ -192,7 +193,7 @@ deploy_revision app['id'] do
         to "#{app['deploy_to']}/shared/vendor_bundle"
       end
       common_groups = %w{development test cucumber staging production}
-      execute "bundle install --deployment --without #{(common_groups -([node.chef_environment])).join(' ')}" do
+      execute "bundle install --deployment --without #{(common_groups -([rails_env])).join(' ')}" do
         ignore_failure true
         cwd release_path
       end

@@ -193,6 +193,9 @@ deploy_revision app['id'] do
         to "#{app['deploy_to']}/shared/vendor_bundle"
       end
       common_groups = %w{development test cucumber staging production}
+      if app.has_key? 'excluded_bundler_groups'
+        common_groups += app['excluded_bundler_groups']
+      end
       execute "bundle install --deployment --without #{(common_groups -([rails_env])).join(' ')}" do
         ignore_failure true
         cwd release_path

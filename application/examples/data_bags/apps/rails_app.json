@@ -67,6 +67,10 @@
     "gem_name": "specific gems required for installation to run the application, and if a specific version is required, e.g.",
     "rails": "2.3.5"
   },
+  "excluded_bundler_groups": [
+    "additional groups to exclude from bundle install",
+    "showoff"
+  ],
   "memcached": {
     "production": {
       "namespace": "specify the memcache namespace, ie my_app_environment"

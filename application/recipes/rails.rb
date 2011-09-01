@@ -195,7 +195,8 @@ deploy_revision app['id'] do
       if app.has_key? 'excluded_bundler_groups'
         common_groups += app['excluded_bundler_groups']
       end
-      execute "bundle install --deployment --without #{(common_groups -([rails_env])).join(' ')}" do
+      flag = File.exists?("#{app['deploy_to']}/Gemfile.lock") ? "--deployment": ""
+      execute "bundle install #{flag} --without #{(common_groups -([rails_env])).join(' ')}" do
         ignore_failure true
         cwd release_path
       end

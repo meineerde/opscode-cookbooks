@@ -197,12 +197,12 @@ deploy_revision app['id'] do
       end
       flag = File.exists?("#{app['deploy_to']}/Gemfile.lock") ? "--deployment": ""
       execute "bundle install #{flag} --without #{(common_groups -([rails_env])).join(' ')}" do
-        ignore_failure true
+        ignore_failure false
         cwd release_path
       end
     elsif app['gems'].has_key?('bundler08')
       execute "gem bundle" do
-        ignore_failure true
+        ignore_failure false
         cwd release_path
       end
 
@@ -213,8 +213,8 @@ deploy_revision app['id'] do
       #
       # maybe worth doing run_symlinks_before_migrate before before_migrate callbacks,
       # or an add'l callback.
-      execute "(ln -s ../../../shared/database.yml config/database.yml && rake gems:install); rm config/database.yml" do
-        ignore_failure true
+      execute "(ln -s ../../../shared/database.yml config/database.yml && rake gems:install); rm -f config/database.yml" do
+        ignore_failure false
         cwd release_path
       end
     end

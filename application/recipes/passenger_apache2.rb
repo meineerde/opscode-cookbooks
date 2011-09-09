@@ -27,6 +27,10 @@ include_recipe "passenger_apache2::mod_rails"
 server_aliases = [ "#{app['id']}.#{node['domain']}", node['fqdn'], app['server_aliases'] ]
 server_aliases = server_aliases.flatten.uniq.compact
 
+# make the _default chef_environment look like the Rails production environment
+rails_env = (node.chef_environment =~ /_default/ ? "production" : node.chef_environment)
+node.run_state[:rails_env] = rails_env
+
 if node.has_key?("cloud")
   server_aliases << node['cloud']['public_hostname']
 end
@@ -38,7 +42,7 @@ web_app app['id'] do
   server_name "#{app['id']}.#{node[:domain]}"
   server_aliases server_aliases
   log_dir node[:apache][:log_dir]
-  rails_env node.chef_environment
+  rails_env node.run_state[:rails_env]
 end
 
 if ::File.exists?(::File.join(app['deploy_to'], "current"))

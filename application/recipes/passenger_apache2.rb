@@ -17,19 +17,20 @@
 # limitations under the License.
 #
 
-app = node.run_state[:current_app] 
+app = node.run_state[:current_app]
 
 include_recipe "apache2"
 include_recipe "apache2::mod_ssl"
 include_recipe "apache2::mod_rewrite"
 include_recipe "passenger_apache2::mod_rails"
 
-server_aliases = [ "#{app['id']}.#{node['domain']}", node['fqdn'] ]
+server_aliases = [ "#{app['id']}.#{node['domain']}", node['fqdn'], app['server_aliases'] ]
+server_aliases = server_aliases.flatten.uniq.compact
 
 if node.has_key?("cloud")
   server_aliases << node['cloud']['public_hostname']
 end
-  
+
 web_app app['id'] do
   docroot "#{app['deploy_to']}/current/public"
   template "#{app['id']}.conf.erb"

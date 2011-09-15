@@ -175,6 +175,8 @@ if memcached_nodes
   end
 end
 
+Opscode::Application::Callbacks.callback(self, app['id'], :pre_deploy)
+
 ## Then, deploy
 deploy_revision app['id'] do
   revision app['revision'][node.chef_environment]
@@ -241,4 +243,8 @@ deploy_revision app['id'] do
       end
     end
   end
+
+  Opscode::Application::Callbacks.callback(self, app['id'], :deploy)
 end
+
+Opscode::Application::Callbacks.callback(self, app['id'], :post_deploy)

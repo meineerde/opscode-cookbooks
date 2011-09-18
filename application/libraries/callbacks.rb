@@ -1,20 +1,19 @@
 module Opscode
   module Application
     module Callbacks
-      def self.application_callback(app_id, type = :deploy, &block)
-        @application_callbacks ||= {}
-        @application_callbacks[app_id] ||= {}
-        @application_callbacks[app_id][type] = block
+      def self.register(recipe, type, app_id = :__default__, &block)
+        @callbacks ||= Mash.new
+        @callbacks[recipe] ||= Mash.new
+        @callbacks[recipe][type] ||= Mash.new
+        @callbacks[recipe][type][app_id] = block
       end
 
-      def self.callback(resource, app_id, type = :deploy)
-        return if @application_callbacks.nil?
-        app = @application_callbacks[app_id] || return
-        return if app.nil?
-        cb = app[type]
+      def self.callback(recipe, type, app_id, args)
+        cb = @callbacks[recipe][type][app_id] || @callbacks[recipe][type][:__default__] rescue nil
         return if cb.nil?
 
-        cb.call(resource)
+        Chef::Log.info "Running #{type} callback in application::#{recipe} for #{app_id}"
+        cb.call(args)
       end
     end
   end

@@ -113,7 +113,7 @@ if app["database_master_role"]
       dbm = rows[0]
     end
   end
-  
+
   # we need the django version to render the correct type of settings.py file
   django_version = 1.2
   if app['pips'].has_key?('django') && !app['pips']['django'].strip.empty?
@@ -140,6 +140,7 @@ if app["database_master_role"]
 end
 
 ## Then, deploy
+Opscode::Application::Callbacks.callback(:django, :pre_deploy, app['id'], self)
 deploy_revision app['id'] do
   revision app['revision'][node.chef_environment]
   repository app['repository']
@@ -160,7 +161,7 @@ deploy_revision app['id'] do
     elsif ::File.exists?(::File.join(release_path, "requirements.txt"))
       requirements_file = ::File.join(release_path, "requirements.txt")
     end
-    
+
     if requirements_file
       Chef::Log.info("Installing pips using requirements file: #{requirements_file}")
       execute "pip install -E #{ve.path} -r #{requirements_file}" do
@@ -190,4 +191,8 @@ deploy_revision app['id'] do
       end
     end
   end
+
+  Opscode::Application::Callbacks.callback(:django, :deploy, app['id'], self)
 end
+
+Opscode::Application::Callbacks.callback(:django, :post_deploy, app['id'], self)

@@ -100,9 +100,15 @@ if app["database_master_role"]
 end
 
 ## Then, deploy
+Opscode::Application::Callbacks.callback(:java_webapp, :pre_deploy, app['id'], self)
+
 remote_file app['id'] do
   path "#{app['deploy_to']}/releases/#{app['war'][node.chef_environment]['checksum']}.war"
   source app['war'][node.chef_environment]['source']
   mode "0644"
   checksum app['war'][node.chef_environment]['checksum']
+
+  Opscode::Application::Callbacks.callback(:java_webapp, :deploy, app['id'], self)
 end
+
+Opscode::Application::Callbacks.callback(:java_webapp, :post_deploy, app['id'], self)

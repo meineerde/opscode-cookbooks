@@ -126,6 +126,7 @@ if app["database_master_role"]
 end
 
 ## Then, deploy
+Opscode::Application::Callbacks.callback(:php, :pre_deploy, app['id'], self)
 deploy_revision app['id'] do
   revision app['revision'][node.chef_environment]
   repository app['repository']
@@ -141,4 +142,7 @@ deploy_revision app['id'] do
   symlink_before_migrate({
     local_settings_file_name => local_settings_full_path
   })
+
+  Opscode::Application::Callbacks.callback(:php, :deploy, app['id'], self)
 end
+Opscode::Application::Callbacks.callback(:php, :post_deploy, app['id'], self)

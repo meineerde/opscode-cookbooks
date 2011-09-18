@@ -1,7 +1,8 @@
 module Opscode
   module Application
     module Helpers
-      def database_master(app)
+      def database_master(app, recipe)
+        node = recipe.node
         if app["database_master_role"]
           dbm = nil
           # If we are the database master
@@ -21,14 +22,15 @@ module Opscode
           end
         end
 
-        if !dbm && app["database_master_hosts"]
+        if !dbm && app["database_master_hosts"] && app["database_master_hosts"][node.chef_environment]
           dbm = Chef::Node.new
           dbm['ipaddress'] = app["database_master_hosts"][0]
         end
         dbm
       end
 
-      def memcached_nodes
+      def memcached_nodes(app, recipe)
+        node = recipe.node
         if app["memcached_role"]
           unless Chef::Config[:solo]
             memcached_nodes = search(:node, "role:#{app["memcached_role"][0]} AND chef_environment:#{node.chef_environment} NOT hostname:#{node[:hostname]}")

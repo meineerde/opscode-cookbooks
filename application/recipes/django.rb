@@ -21,6 +21,8 @@ app = node.run_state[:current_app]
 
 include_recipe "python"
 
+include Opscode::Application::Helpers
+
 ###
 # You really most likely don't want to run this recipe from here - let the
 # default application recipe work it's mojo for you.
@@ -75,68 +77,30 @@ if app['pips']
   end
 end
 
-if app.has_key?("deploy_key")
-  ruby_block "write_key" do
-    block do
-      f = ::File.open("#{app['deploy_to']}/id_deploy", "w")
-      f.print(app["deploy_key"])
-      f.close
-    end
-    not_if do ::File.exists?("#{app['deploy_to']}/id_deploy"); end
-  end
+handle_deploy_key(app, self)
 
-  file "#{app['deploy_to']}/id_deploy" do
-    owner app['owner']
-    group app['group']
-    mode '0600'
-  end
-
-  template "#{app['deploy_to']}/deploy-ssh-wrapper" do
-    source "deploy-ssh-wrapper.erb"
-    owner app['owner']
-    group app['group']
-    mode "0755"
-    variables app.to_hash
-  end
-end
-
-if app["database_master_role"]
-  dbm = nil
-  # If we are the database master
-  if node.run_list.roles.include?(app["database_master_role"][0])
-    dbm = node
-  else
-  # Find the database master
-    results = search(:node, "role:#{app["database_master_role"][0]} AND chef_environment:#{node.chef_environment}", nil, 0, 1)
-    rows = results[0]
-    if rows.length == 1
-      dbm = rows[0]
-    end
-  end
-
+dbm = database_master(app)
+if dbm
   # we need the django version to render the correct type of settings.py file
   django_version = 1.2
   if app['pips'].has_key?('django') && !app['pips']['django'].strip.empty?
     django_version = app['pips']['django'].to_f
   end
 
-  # Assuming we have one...
-  if dbm
-    # local_settings.py
-    template "#{app['deploy_to']}/shared/#{local_settings_file_name}" do
-      source "settings.py.erb"
-      owner app["owner"]
-      group app["group"]
-      mode "644"
-      variables(
-        :host => (dbm.attribute?('cloud') ? dbm['cloud']['local_ipv4'] : dbm['ipaddress']),
-        :database => app['databases'][node.chef_environment],
-        :django_version => django_version
-      )
-    end
-  else
-    Chef::Log.warn("No node with role #{app["database_master_role"][0]}, #{local_settings_file_name} not rendered!")
+  # local_settings.py
+  template "#{app['deploy_to']}/shared/#{local_settings_file_name}" do
+    source "settings.py.erb"
+    owner app["owner"]
+    group app["group"]
+    mode "644"
+    variables(
+      :host => (dbm.attribute?('cloud') ? dbm['cloud']['local_ipv4'] : dbm['ipaddress']),
+      :database => app['databases'][node.chef_environment],
+      :django_version => django_version
+    )
   end
+else
+  Chef::Log.warn("No database master found, #{local_settings_file_name} not rendered!")
 end
 
 ## Then, deploy

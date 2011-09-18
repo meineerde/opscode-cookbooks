@@ -19,6 +19,8 @@
 
 app = node.run_state[:current_app]
 
+include Opscode::Application::Helpers
+
 ###
 # You really most likely don't want to run this recipe from here - let the
 # default application recipe work it's mojo for you.
@@ -68,40 +70,26 @@ end
 
 end
 
-if app["database_master_role"]
-  dbm = nil
-  # If we are the database master
-  if node.run_list.roles.include?(app["database_master_role"][0])
-    dbm = node
-  else
-  # Find the database master
-    results = search(:node, "role:#{app["database_master_role"][0]} AND chef_environment:#{node.chef_environment}", nil, 0, 1)
-    rows = results[0]
-    if rows.length == 1
-      dbm = rows[0]
-    end
+dbm = database_master(app)
+if dbm
+  template "#{app['deploy_to']}/shared/#{app['id']}.xml" do
+    source "context.xml.erb"
+    owner app["owner"]
+    group app["group"]
+    mode "644"
+    variables(
+      :host => (dbm.attribute?('cloud') ? dbm['cloud']['local_ipv4'] : dbm['ipaddress']),
+      :app => app['id'],
+      :database => app['databases'][node.chef_environment],
+      :war => "#{app['deploy_to']}/releases/#{app['war'][node.chef_environment]['checksum']}.war"
+    )
   end
-
-  # Assuming we have one...
-  if dbm
-    template "#{app['deploy_to']}/shared/#{app['id']}.xml" do
-      source "context.xml.erb"
-      owner app["owner"]
-      group app["group"]
-      mode "644"
-      variables(
-        :host => (dbm.attribute?('cloud') ? dbm['cloud']['local_ipv4'] : dbm['ipaddress']),
-        :app => app['id'],
-        :database => app['databases'][node.chef_environment],
-        :war => "#{app['deploy_to']}/releases/#{app['war'][node.chef_environment]['checksum']}.war"
-      )
-    end
-  end
+else
+  Chef::Log.warn("No database master found, context.xml not rendered!")
 end
 
 ## Then, deploy
 Opscode::Application::Callbacks.callback(:java_webapp, :pre_deploy, app['id'], self)
-
 remote_file app['id'] do
   path "#{app['deploy_to']}/releases/#{app['war'][node.chef_environment]['checksum']}.war"
   source app['war'][node.chef_environment]['source']
@@ -110,5 +98,4 @@ remote_file app['id'] do
 
   Opscode::Application::Callbacks.callback(:java_webapp, :deploy, app['id'], self)
 end
-
 Opscode::Application::Callbacks.callback(:java_webapp, :post_deploy, app['id'], self)

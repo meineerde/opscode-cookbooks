@@ -24,7 +24,7 @@ module Opscode
 
         if !dbm && app["database_master_hosts"] && app["database_master_hosts"][node.chef_environment]
           dbm = Chef::Node.new
-          dbm['ipaddress'] = app["database_master_hosts"][0]
+          dbm['ipaddress'] = app["database_master_hosts"][node.chef_environment][0]
         end
         dbm
       end
@@ -44,8 +44,8 @@ module Opscode
           end
         end
 
-        if (!memcached_nodes || memcached_nodes.empty?) && app["memcached_hosts"]
-          memcached_nodes = app["memcached_hosts"].collect do |server, port|
+        if (!memcached_nodes || memcached_nodes.empty?) && app["memcached_hosts"] && app["memcached_hosts"][node.chef_environment]
+          memcached_nodes = app["memcached_hosts"][node.chef_environment].collect do |server, port|
             cache_node = Chef::Node.new
             cache_node['ipaddress'] = server
             cache_node['memcached'] = {'port' => port}

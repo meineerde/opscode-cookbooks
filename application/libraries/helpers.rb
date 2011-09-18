@@ -35,14 +35,14 @@ module Opscode
           else
             memcached_nodes = []
           end
-          if memcached_nodes.length == 0
+          if memcached_nodes.empty?
             if node.run_list.roles.include?(app["memcached_role"][0])
               memcached_nodes << node
             end
           end
         end
 
-        if !memcached_nodes && app["memcached_hosts"]
+        if (!memcached_nodes || memcached_nodes.empty?) && app["memcached_hosts"]
           memcached_nodes = app["memcached_hosts"].collect do |server, port|
             cache_node = Chef::Node.new
             cache_node['ipaddress'] = server

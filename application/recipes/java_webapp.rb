@@ -70,7 +70,7 @@ end
 
 end
 
-dbm = database_master(app)
+dbm = database_master(app, self)
 if dbm
   template "#{app['deploy_to']}/shared/#{app['id']}.xml" do
     source "context.xml.erb"

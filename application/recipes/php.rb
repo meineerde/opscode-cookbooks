@@ -70,7 +70,7 @@ end
 
 handle_deploy_key(app, self)
 
-dbm = database_master(app)
+dbm = database_master(app, self)
 if dbm
   template "#{app['deploy_to']}/shared/#{local_settings_file_name}" do
     source "#{local_settings_file_name}.erb"

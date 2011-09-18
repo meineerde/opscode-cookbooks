@@ -10,9 +10,8 @@ module Opscode
       end
 
       def self.callback(recipe, type, app_id, args)
-        callbacks = @callbacks[recipe][type][app_id]
-        callbacks = @callbacks[recipe][type][:__default__] if (callbacks.nil? || callbacks.empty?)
-        return if (callbacks.nil? || callbacks.empty?)
+        callbacks = @callbacks[recipe][type][app_id] || @callbacks[recipe][type][:__default__] rescue nil
+        return if callbacks.nil? || callbacks.empty?
 
         Chef::Log.info "Running #{type} callbacks in application::#{recipe} for #{app_id}"
         callbacks.each{ |cb| cb.call(args) }

@@ -19,6 +19,12 @@
     "name of the role used by database master, typically named after the app 'my_app_database_master'",
     "my_app_database_master"
   ],
+  "database_master_hosts": {
+    "production": [
+      "ipaddress of master database host to be used in Chef solo mode or if the database_master_role does not match any hosts",
+      "10.0.0.3"
+    ]
+  },
   "repository": "git@github.com:company/my_app.git",
   "revision": {
     "production": "commit hash, branch or tag to deploy"

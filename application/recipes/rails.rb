@@ -19,7 +19,7 @@
 
 app = node.run_state[:current_app]
 
-include Opscode::Application::Helpers
+self.class.send :include, Opscode::Application::Helpers
 
 # make the _default chef_environment look like the Rails production environment
 rails_env = (node.chef_environment =~ /_default/ ? "production" : node.chef_environment)

@@ -21,7 +21,7 @@ app = node.run_state[:current_app]
 
 include_recipe "php"
 
-include Opscode::Application::Helpers
+self.class.send :include, Opscode::Application::Helpers
 
 ###
 # You really most likely don't want to run this recipe from here - let the

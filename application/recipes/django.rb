@@ -80,7 +80,7 @@ end
 
 handle_deploy_key(app, self)
 
-dbm = database_master(app, self)
+dbm = database_master(app, node)
 if dbm
   # we need the django version to render the correct type of settings.py file
   django_version = 1.2

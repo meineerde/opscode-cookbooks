@@ -78,7 +78,7 @@ end
 
 handle_deploy_key(app, self)
 
-dbm = database_master(app, self)
+dbm = database_master(app, node)
 if dbm
   template "#{app['deploy_to']}/shared/database.yml" do
     source "database.yml.erb"
@@ -95,7 +95,7 @@ else
   Chef::Log.warn("No database master found, database.yml not rendered!")
 end
 
-memcached_nodes = memcached_nodes(app, self)
+memcached_nodes = memcached_nodes(app, node)
 if memcached_nodes
   template "#{app['deploy_to']}/shared/memcached.yml" do
     source "memcached.yml.erb"
